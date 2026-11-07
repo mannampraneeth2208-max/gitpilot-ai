@@ -142,7 +142,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const x=$json;\nconst destructive=['execute','approve'].includes(x.action);\nif (destructive && x.approvalStatus !== 'APPROVED') return [{json:{...x,state:'AWAITING_APPROVAL',approvalRequired:true,message:'Explicit approval is required before external changes.'}}];\nreturn [{json:{...x,state:x.state||'ANALYZING',approvalRequired:false}}];",
+        "jsCode": "const x=$json;\nconst destructive=['execute','approve'].includes(x.action);\nconst autonomous=$env.GITPILOT_APPROVAL_POLICY === 'autonomous';\nif (destructive && !autonomous && x.approvalStatus !== 'APPROVED') return [{json:{...x,state:'AWAITING_APPROVAL',approvalRequired:true,message:'Explicit approval is required before external changes.'}}];\nreturn [{json:{...x,state:destructive&&autonomous?'EXECUTING':(x.state||'ANALYZING'),approvalRequired:destructive&&!autonomous,approvalPolicy:autonomous?'autonomous':'human_gate'}}];",
         "mode": "runOnceForAllItems"
       },
       "id": "b042c5ad-42e7-5afe-a154-3a3e6c3ec67a",

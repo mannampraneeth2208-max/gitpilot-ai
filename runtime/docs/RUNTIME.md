@@ -20,3 +20,7 @@ docker compose up -d --build
 ```
 
 Import the workflows from `workflows/` into n8n, create the `GitPilot PostgreSQL` credential, and keep the workflows inactive until the external services are configured. Production deployments must add TLS, rate limiting, a real durable task store, GitHub App/OAuth callback handling, a queue, network egress policy, container resource limits, and audit retention.
+
+## Approval policy
+
+Set `GITPILOT_APPROVAL_POLICY=autonomous` only when you explicitly want the Brain to start approved execution without a second human gate. The Brain still records the policy, task state, evidence, tests, security review, independent review, and PR conditions. Set it to `human_gate` to require explicit approval before external changes.

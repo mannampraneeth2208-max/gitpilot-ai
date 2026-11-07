@@ -49,6 +49,7 @@ services:
     environment:
       PORT: 8080
       N8N_WEBHOOK_BASE: ${N8N_WEBHOOK_BASE:-http://n8n:5678/webhook}
+      GITPILOT_APPROVAL_POLICY: ${GITPILOT_APPROVAL_POLICY:-autonomous}
       GITPILOT_WEBHOOK_SECRET: ${GITPILOT_WEBHOOK_SECRET:?set GITPILOT_WEBHOOK_SECRET}
       WORKER_BASE_URL: http://worker:8080
       GITHUB_API_BASE: https://api.github.com
