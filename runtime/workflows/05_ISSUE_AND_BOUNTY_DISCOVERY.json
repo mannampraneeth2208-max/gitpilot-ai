@@ -1,0 +1,229 @@
+{
+  "name": "05_ISSUE_AND_BOUNTY_DISCOVERY",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/opportunities/discover",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b2ca60e2-b483-5a91-bca5-32e56c69593b",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst requestId = body.requestId || `req_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;\nif (!body.userId && !body.system) throw new Error('userId is required');\nreturn [{json:{...body, requestId, receivedAt:new Date().toISOString(), workflow:'05_ISSUE_AND_BOUNTY_DISCOVERY'}}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "fd6affc2-25f2-5170-b08e-2ab4d6018c37",
+      "name": "Validate and normalize input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_runs (request_id, workflow_name, status, input_json) VALUES ({{$json.requestId}}, '05_ISSUE_AND_BOUNTY_DISCOVERY', 'RECEIVED', $json::jsonb) ON CONFLICT (request_id) DO NOTHING RETURNING id;",
+        "options": {}
+      },
+      "id": "ef750579-2707-5e4d-a18d-59f4173f2f4a",
+      "name": "Persist task state",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        760,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "postgres": {
+          "id": "GitPilot PostgreSQL",
+          "name": "GitPilot PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.GITHUB_API_BASE || \"https://api.github.com\"}}/{{$json.endpoint || \"user\"}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "4d885cc5-b6b8-5e88-b5e3-2d5ad7f1e3ce",
+      "name": "GitHub API request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        500,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.MODEL_ROUTER_URL}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.MODEL_ROUTER_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({task: $json, systemPrompt: $env.GITPILOT_SYSTEM_PROMPT || \"Return strict JSON with evidence and confidence.\", model: $env.GITPILOT_MODEL || \"configurable\"}) }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "1cdc1846-be25-5c57-b8ed-0223f978fd2c",
+      "name": "Model router",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "1612553c-8ee4-5fc9-8783-fe5d7e7d31c6",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        0
+      ],
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate and normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate and normalize input": {
+      "main": [
+        [
+          {
+            "node": "Persist task state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist task state": {
+      "main": [
+        [
+          {
+            "node": "GitHub API request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub API request": {
+      "main": [
+        [
+          {
+            "node": "Model router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model router": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "staticData": null,
+  "pinData": {},
+  "versionId": "07e13c32-2519-57ef-84a7-ab14c18fa783",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "GitPilot"
+    }
+  ]
+}

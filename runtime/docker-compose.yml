@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gitpilot}
+      POSTGRES_USER: ${POSTGRES_USER:-gitpilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["${N8N_PORT:-5678}:5678"]
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-gitpilot}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-gitpilot}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      GITHUB_API_BASE: https://api.github.com
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?set GITHUB_TOKEN}
+      MODEL_ROUTER_URL: ${MODEL_ROUTER_URL:?set MODEL_ROUTER_URL}
+      MODEL_ROUTER_TOKEN: ${MODEL_ROUTER_TOKEN:?set MODEL_ROUTER_TOKEN}
+      WORKER_BASE_URL: http://worker:8080
+    volumes:
+      - n8ndata:/home/node/.n8n
+      # Mount workflow exports for operator convenience; import them in the UI/API.
+      - ./workflows:/opt/gitpilot/workflows:ro
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    restart: unless-stopped
+    depends_on: [n8n, worker]
+    ports: ["${API_PORT:-8080}:8080"]
+    environment:
+      PORT: 8080
+      N8N_WEBHOOK_BASE: ${N8N_WEBHOOK_BASE:-http://n8n:5678/webhook}
+      GITPILOT_WEBHOOK_SECRET: ${GITPILOT_WEBHOOK_SECRET:?set GITPILOT_WEBHOOK_SECRET}
+      WORKER_BASE_URL: http://worker:8080
+      GITHUB_API_BASE: https://api.github.com
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?set GITHUB_TOKEN}
+      MODEL_ROUTER_URL: ${MODEL_ROUTER_URL:?set MODEL_ROUTER_URL}
+      MODEL_ROUTER_TOKEN: ${MODEL_ROUTER_TOKEN:?set MODEL_ROUTER_TOKEN}
+      GMAIL_NOTIFICATION_MODE: ${GMAIL_NOTIFICATION_MODE:-disabled}
+      GMAIL_ACCESS_TOKEN: ${GMAIL_ACCESS_TOKEN:-}
+      GMAIL_FROM: ${GMAIL_FROM:-}
+      GMAIL_TO: ${GMAIL_TO:-}
+
+  worker:
+    build: { context: ., dockerfile: worker/Dockerfile }
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp:size=1g,noexec,nosuid,nodev"]
+    environment:
+      PORT: 8080
+      WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET:?set WORKER_SHARED_SECRET}
+      WORKER_ROOT: /tmp/gitpilot-runs
+      WORKER_TIMEOUT_SECONDS: ${WORKER_TIMEOUT_SECONDS:-900}
+    volumes:
+      - worker-runs:/tmp/gitpilot-runs
+
+volumes:
+  pgdata:
+  n8ndata:
+  worker-runs:

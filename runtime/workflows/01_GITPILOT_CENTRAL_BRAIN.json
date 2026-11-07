@@ -1,0 +1,295 @@
+{
+  "name": "01_GITPILOT_CENTRAL_BRAIN",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/analyze",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "50f57dc1-e94a-579a-8f8f-5ab653707ae8",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/discover",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "50fa0482-9957-567f-8ee9-3e33aa7a134f",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/plan",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "751eb1c9-54f1-5cb2-905e-9736bf16cd45",
+      "name": "Webhook2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/execute",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "32f5305a-bf1e-52a6-afa3-03e3ef4adfd7",
+      "name": "Webhook3",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/approve",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5716bcd5-7159-5c8d-8048-68a4b9ac47bf",
+      "name": "Webhook4",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/gitpilot/review",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "d63b46a1-12af-5258-ad59-b5b175e406b3",
+      "name": "Webhook5",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body=$json.body??$json;\nconst action=body.action || body.intent || 'analyze';\nconst allowed=['analyze','discover','plan','execute','approve','review'];\nif(!allowed.includes(action)) throw new Error(`Unsupported action: ${action}`);\nconst taskId=body.taskId || `task_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;\nreturn [{json:{...body, action, taskId, state: action==='execute'?'AWAITING_APPROVAL':'RECEIVED', idempotencyKey:body.idempotencyKey||taskId, receivedAt:new Date().toISOString()}}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "c6dca1e0-c7b0-5c09-8f30-f11826949ac3",
+      "name": "Normalize request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        300,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tasks (id, user_id, state, input_json, idempotency_key) VALUES ({{$json.taskId}}, {{$json.userId}}, {{$json.state}}, $json::jsonb, {{$json.idempotencyKey}}) ON CONFLICT (id) DO UPDATE SET updated_at=now() RETURNING *;",
+        "options": {}
+      },
+      "id": "9db82397-71c2-56ea-82a3-3afdafd0e24b",
+      "name": "Persist task state",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        760,
+        0
+      ],
+      "onError": "stopWorkflow",
+      "credentials": {
+        "postgres": {
+          "id": "GitPilot PostgreSQL",
+          "name": "GitPilot PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$json;\nconst destructive=['execute','approve'].includes(x.action);\nif (destructive && x.approvalStatus !== 'APPROVED') return [{json:{...x,state:'AWAITING_APPROVAL',approvalRequired:true,message:'Explicit approval is required before external changes.'}}];\nreturn [{json:{...x,state:x.state||'ANALYZING',approvalRequired:false}}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "b042c5ad-42e7-5afe-a154-3a3e6c3ec67a",
+      "name": "Evidence and safety gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        900,
+        0
+      ],
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "01bcc6fb-62a6-540e-a64d-d9bba1be740d",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        0
+      ],
+      "onError": "stopWorkflow"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook3": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook4": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook5": {
+      "main": [
+        [
+          {
+            "node": "Normalize request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize request": {
+      "main": [
+        [
+          {
+            "node": "Persist task state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist task state": {
+      "main": [
+        [
+          {
+            "node": "Evidence and safety gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evidence and safety gate": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "staticData": null,
+  "pinData": {},
+  "versionId": "698b71bb-5570-5018-9911-60954977aae1",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "GitPilot"
+    }
+  ]
+}

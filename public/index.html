@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="GitPilot autonomous contribution control room" />
+  <title>GitPilot Control Room</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span></div><div><strong>GitPilot</strong><small>CONTROL ROOM</small></div></div>
+      <div class="rail-label">OPERATIONS</div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">◈</span>Overview</button>
+        <button class="nav-item" data-view="contributions"><span class="nav-icon">↗</span>Contributions <b class="nav-count">18</b></button>
+        <button class="nav-item" data-view="approval"><span class="nav-icon">!</span>Approval queue <b class="nav-count warn">1</b></button>
+        <button class="nav-item" data-view="repositories"><span class="nav-icon">⌘</span>Repositories</button>
+        <button class="nav-item" data-view="agents"><span class="nav-icon">◇</span>Agents</button>
+      </nav>
+      <div class="rail-label lower">SYSTEM</div>
+      <nav class="nav-list">
+        <button class="nav-item" data-view="events"><span class="nav-icon">⋮</span>Event stream</button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+      </nav>
+      <div class="sidebar-foot"><span class="signal live"></span><span>Runtime online</span><span class="mono">v0.2</span></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar"><div><p class="eyebrow">SATURDAY · 07 NOV 2026 · 15:16 UTC</p><h1 id="page-title">Contribution overview</h1></div><div class="top-actions"><div class="health-pill"><span class="signal live"></span><span id="runtime-label">Demo adapter</span></div><button class="icon-button" id="refresh-btn" title="Refresh data" aria-label="Refresh data">↻</button><div class="avatar" title="Operator">MP</div></div></header>
+
+      <section class="view active" id="view-overview" aria-labelledby="page-title">
+        <div class="hero-strip"><div><div class="section-kicker">AUTONOMOUS CONTRIBUTION SYSTEM</div><h2>Nothing is complete<br><em>without proof.</em></h2><p>GitPilot coordinates research, implementation, tests, and review—then waits for your approval before anything external happens.</p></div><div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit-core">GP</div></div></div>
+        <div class="metric-grid" id="metrics"></div>
+        <div class="content-grid two-one"><section class="panel panel-large"><div class="panel-head"><div><span class="section-kicker">LIVE WORK</span><h3>Working contributions</h3></div><button class="text-button" data-view="contributions">View all ↗</button></div><div id="active-tasks" class="task-list"></div></section><aside class="panel approval-panel"><div class="panel-head"><div><span class="section-kicker accent">HUMAN GATE</span><h3>Approval queue</h3></div><span class="queue-badge" id="approval-badge">1</span></div><div id="approval-card"></div></aside></div>
+        <div class="content-grid two-one lower-grid"><section class="panel"><div class="panel-head"><div><span class="section-kicker">VERIFIED OUTPUT</span><h3>Completed contributions</h3></div><button class="text-button" data-view="contributions">History ↗</button></div><div id="completed-list" class="completed-list"></div></section><section class="panel telemetry"><div class="panel-head"><div><span class="section-kicker">TRACE</span><h3>Event stream</h3></div><button class="text-button" data-view="events">Open ↗</button></div><div id="event-list" class="event-list"></div></section></div>
+      </section>
+
+      <section class="view" id="view-contributions"><div class="view-header"><div><span class="section-kicker">HISTORY + ACTIVE</span><h2>Contributions</h2><p>Trace every repository change from discovery to verified outcome.</p></div><div class="filter-row"><input id="contribution-search" class="search-input" placeholder="Search repositories or tasks" aria-label="Search contributions"/><select id="state-filter" class="select-input" aria-label="Filter contribution state"><option value="all">All states</option><option value="active">Active</option><option value="approval">Approval</option><option value="verified">Verified</option></select></div></div><div class="panel full-panel"><div id="contribution-table" class="contribution-table"></div></div></section>
+
+      <section class="view" id="view-approval"><div class="view-header"><div><span class="section-kicker accent">EXPLICIT AUTHORIZATION</span><h2>Approval queue</h2><p>Review evidence before GitPilot modifies an external repository or opens a public pull request.</p></div></div><div id="approval-detail" class="approval-detail"></div></section>
+
+      <section class="view" id="view-repositories"><div class="view-header"><div><span class="section-kicker">REPOSITORY INTELLIGENCE</span><h2>Repositories</h2><p>Indexed surfaces, active opportunities, and current head state.</p></div></div><div class="repo-grid"><article class="repo-card"><div class="repo-top"><span class="repo-avatar blue">N</span><span class="status-dot green"></span></div><h3>vercel/next.js</h3><p class="mono">HEAD 6f3a8b2 · 24m ago</p><div class="repo-stats"><span><b>18.4k</b> files</span><span><b>98%</b> indexed</span></div><div class="tag-row"><span class="tag">TypeScript</span><span class="tag">Turbopack</span><span class="tag">3 opportunities</span></div></article><article class="repo-card"><div class="repo-top"><span class="repo-avatar purple">F</span><span class="status-dot green"></span></div><h3>fastapi/fastapi</h3><p class="mono">HEAD a827d10 · 42m ago</p><div class="repo-stats"><span><b>1.2k</b> files</span><span><b>100%</b> indexed</span></div><div class="tag-row"><span class="tag">Python</span><span class="tag">Docs</span><span class="tag">2 opportunities</span></div></article><article class="repo-card"><div class="repo-top"><span class="repo-avatar orange">F</span><span class="status-dot amber"></span></div><h3>pallets/flask</h3><p class="mono">HEAD 10e5c9a · 1h ago</p><div class="repo-stats"><span><b>482</b> files</span><span><b>87%</b> indexed</span></div><div class="tag-row"><span class="tag">Python</span><span class="tag">CI pending</span></div></article></div></section>
+
+      <section class="view" id="view-agents"><div class="view-header"><div><span class="section-kicker">SPECIALIST FLEET</span><h2>Agents</h2><p>Each recommendation carries evidence, confidence, and execution restrictions.</p></div></div><div class="agent-grid" id="agent-grid"></div></section>
+
+      <section class="view" id="view-events"><div class="view-header"><div><span class="section-kicker">AUDITABLE TRACE</span><h2>Event stream</h2><p>System events are kept separate from model claims and tied to task evidence.</p></div><button class="button secondary" id="refresh-events">Refresh stream</button></div><div class="panel full-panel"><div id="event-list-full" class="event-list full-events"></div></div></section>
+
+      <section class="view" id="view-settings"><div class="view-header"><div><span class="section-kicker">OPERATOR CONFIGURATION</span><h2>Settings</h2><p>Secrets are write-only. GitPilot shows status and fingerprints, never raw credentials.</p></div><button class="button primary" id="add-provider">+ Add provider</button></div><div class="settings-grid"><section class="panel"><div class="panel-head"><div><span class="section-kicker">PROVIDER HEALTH</span><h3>Connections</h3></div></div><div id="provider-list" class="provider-list"></div></section><aside class="panel security-note"><div class="shield">⌁</div><h3>Credential boundary</h3><p>API keys are accepted only by the server-side settings boundary. They are fingerprinted for identification and never returned to the browser after save.</p><div class="rule-list"><div><span class="signal green"></span>GitHub changes require approval</div><div><span class="signal green"></span>Gmail password never accepted</div><div><span class="signal amber"></span>Rotate exposed keys</div></div></aside></div></section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="provider-dialog"><form method="dialog" id="provider-form"><div class="dialog-head"><div><span class="section-kicker">WRITE-ONLY SECRET</span><h3 id="dialog-title">Add provider</h3></div><button class="icon-button" value="cancel" aria-label="Close dialog">×</button></div><label>Provider ID<input name="id" placeholder="openrouter" required /></label><label>Display name<input name="name" placeholder="OpenRouter" required /></label><label>Type<select name="kind"><option value="model">Model provider</option><option value="github">GitHub</option><option value="notifications">Notifications</option></select></label><label>Model or mode<input name="model" placeholder="verified-model-name" /></label><label>API key / OAuth token <span class="label-note">never shown again</span><input name="secret" type="password" autocomplete="new-password" required /></label><div class="dialog-note">This value is sent to the server over the app connection and is stored only through the configured secrets boundary.</div><div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button class="button primary" value="default">Save securely</button></div></form></dialog>
+  <script src="/app.js"></script>
+</body>
+</html>
