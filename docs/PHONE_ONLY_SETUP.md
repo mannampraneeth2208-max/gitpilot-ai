@@ -16,16 +16,17 @@ Use this for setup, testing, and manually starting a run:
 
 1. Open `https://github.com/mannampraneeth2208-max/gitpilot-ai` in a phone browser.
 2. Tap **Code**, open **Codespaces**, and create a codespace from `main`.
-3. Open the browser terminal.
-4. Verify the project:
+3. Wait for the repository's Docker-enabled Codespaces configuration to finish building.
+4. Open the browser terminal.
+5. Verify the project:
 
    ```bash
    ./validate-all.sh
    npm --prefix runtime test
    ```
 
-5. Do not commit `.env`. If you start services in the codespace, enter secrets only into the codespace environment or a local untracked `.env` file.
-6. Stop the codespace when finished. Do not use it as the permanent n8n host.
+6. Do not commit `.env`. If you start services in the codespace, enter secrets only into the codespace environment or a local untracked `.env` file.
+7. Stop the codespace when finished. Do not use it as the permanent n8n host.
 
 ### Option B: Always-on cloud host
 

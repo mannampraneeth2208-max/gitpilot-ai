@@ -1,0 +1,24 @@
+{
+  "name": "GitPilot phone workspace",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    }
+  },
+  "forwardPorts": [3000, 5678, 8080],
+  "portsAttributes": {
+    "3000": {"label": "GitPilot Control Room", "onAutoForward": "notify"},
+    "5678": {"label": "n8n", "onAutoForward": "notify"},
+    "8080": {"label": "GitPilot API", "onAutoForward": "notify"}
+  },
+  "postCreateCommand": "./validate-all.sh && npm --prefix runtime test",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
