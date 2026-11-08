@@ -3,7 +3,8 @@ set -euo pipefail
 
 : "${GEMINI_API_KEY:?Set GEMINI_API_KEY as a Codespaces secret before running this script}"
 : "${OPENROUTER_API_KEY:?Set OPENROUTER_API_KEY as a Codespaces secret before running this script}"
-: "${GITHUB_RUNTIME_TOKEN:?Set GITHUB_RUNTIME_TOKEN as a Codespaces secret before running this script}"
+GITHUB_RUNTIME_TOKEN="${GITHUB_RUNTIME_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+: "${GITHUB_RUNTIME_TOKEN:?Sign in to GitHub CLI in Codespaces or set GITHUB_RUNTIME_TOKEN}"
 
 random_secret() { openssl rand -hex 32; }
 

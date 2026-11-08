@@ -25,8 +25,15 @@ Use this for setup, testing, and manually starting a run:
    npm --prefix runtime test
    ```
 
-6. Do not commit `.env`. If you start services in the codespace, enter secrets only into the codespace environment or a local untracked `.env` file.
-7. Stop the codespace when finished. Do not use it as the permanent n8n host.
+6. In the repository's GitHub settings, add these **Codespaces secrets**: `GEMINI_API_KEY` and `OPENROUTER_API_KEY`. Use freshly rotated keys.
+7. In the Codespaces terminal, run the one-command bootstrap:
+
+   ```bash
+   ./scripts/bootstrap-codespace.sh
+   ```
+
+8. The script uses the Codespaces GitHub authentication when available, generates random database, n8n, webhook, and worker secrets locally, creates a mode-600 `.env`, and starts Docker Compose. Do not commit `.env`.
+9. Stop the codespace when finished. Do not use it as the permanent n8n host.
 
 ### Option B: Always-on cloud host
 
