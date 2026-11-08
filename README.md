@@ -2,6 +2,10 @@
 
 GitPilot is delivered here as one repository: the `runtime/` directory contains the validated 16-workflow n8n package, PostgreSQL schema, API gateway, isolated worker, agent prompts, and runtime documentation. The root application is the Control Room dashboard for completed contributions, active work, approval gates, repositories, agents, events, and provider settings.
 
+## Free self-hosted path
+
+Use the free self-hosted n8n Community Edition in `docker-compose.full.yml`; do not use n8n Cloud for this project. See [`docs/SETUP_FREE.md`](docs/SETUP_FREE.md) for the human-required steps, connector boundaries, and deployment checklist.
+
 ## Start the complete stack
 
 ```bash
