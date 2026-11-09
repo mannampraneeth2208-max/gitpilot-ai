@@ -2,7 +2,7 @@
 
 This change records the first operator-facing contribution for GitPilot itself. The Control Room is the same-origin dashboard at port `3000`; the runtime API gateway is at port `8080`; n8n is at port `5678`.
 
-The dashboard is intended to read contribution activity from the GitHub repository configured by `GITHUB_REPO` and to use the runtime gateway for execution events. Provider secrets remain write-only in the dashboard and belong in Codespaces secrets or another runtime secret store, never in this file.
+The dashboard now reads pull-request activity from the GitHub repository configured by `GITHUB_REPO` through its server-side `/api/completed` adapter, and uses the runtime gateway for execution events. Provider secrets remain write-only in the dashboard and belong in Codespaces secrets or another runtime secret store, never in this file.
 
 ## Verification trace
 
