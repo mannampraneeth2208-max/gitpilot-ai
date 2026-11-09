@@ -44,7 +44,7 @@ async function gmailNotify(subject, text) {
 }
 async function handler(req,res) {
   const url=new URL(req.url,`http://${req.headers.host}`);
-  if (req.method==='GET' && url.pathname==='/healthz') return json(res,200,{ok:true,service:'gitpilot-api'});
+  if (req.method==='GET' && url.pathname==='/healthz') return json(res,200,{ok:true,service:'gitpilot-api',policy:process.env.GITPILOT_APPROVAL_POLICY||'autonomous',capabilities:['analyze','discover','plan','execute','approve','review'],timestamp:new Date().toISOString()});
   let raw=''; try { raw=await readBody(req); } catch(e) { return json(res,413,{error:e.message}); }
   if (!auth(req,raw)) return json(res,401,{error:'invalid signature'});
   let body={}; try { body=raw?JSON.parse(raw):{}; } catch { return json(res,400,{error:'invalid JSON'}); }
