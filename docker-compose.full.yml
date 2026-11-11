@@ -78,6 +78,8 @@ services:
     environment:
       PORT: 3000
       GITPILOT_API_BASE: ${GITPILOT_API_BASE:-http://api:8080}
+      GITHUB_REPO: ${GITHUB_REPO:-mannampraneeth2208-max/gitpilot-ai}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITPILOT_APPROVAL_POLICY: ${GITPILOT_APPROVAL_POLICY:-autonomous}
       GITPILOT_WEBHOOK_SECRET: ${GITPILOT_WEBHOOK_SECRET}
 

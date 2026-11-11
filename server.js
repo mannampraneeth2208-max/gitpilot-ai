@@ -7,6 +7,8 @@ const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, 'public');
 const GATEWAY = process.env.GITPILOT_API_BASE || '';
 const WEBHOOK_SECRET = process.env.GITPILOT_WEBHOOK_SECRET || '';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'mannampraneeth2208-max/gitpilot-ai';
 const providerStore = new Map([
   ['openrouter', { id:'openrouter', name:'OpenRouter', kind:'model', status:'configured', model:'select a verified model', fingerprint:'••••••••', rotatedAt:'2026-11-07T14:55:00Z', notes:'Write-only secret; model name is editable.' }],
   ['github', { id:'github', name:'GitHub App', kind:'github', status:'action required', model:'installation token', fingerprint:'not configured', rotatedAt:null, notes:'Use a GitHub App or fine-grained token.' }],
@@ -34,6 +36,14 @@ function safePath(urlPath) { const clean=urlPath==='/'?'/index.html':urlPath; co
 function fingerprint(value) { return crypto.createHash('sha256').update(value).digest('hex').slice(0,12); }
 function signature(raw) { return crypto.createHmac('sha256', WEBHOOK_SECRET).update(raw).digest('hex'); }
 async function body(req) { let raw=''; for await (const chunk of req) { raw += chunk; if(raw.length>200000) throw Error('request too large'); } return raw ? JSON.parse(raw) : {}; }
+async function githubPulls() {
+  const headers={'accept':'application/vnd.github+json','user-agent':'gitpilot-control-room'};
+  if (GITHUB_TOKEN) headers.authorization=`Bearer ${GITHUB_TOKEN}`;
+  const response=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/pulls?state=all&per_page=10`,{headers});
+  if (!response.ok) throw Error(`github ${response.status}`);
+  const rows=await response.json();
+  return rows.map(pr=>({id:`github_pr_${pr.number}`,repo:GITHUB_REPO,title:pr.title,pr:`#${pr.number}`,result:pr.merged_at?'Merged':pr.state==='open'?'Open':'Closed',verified:'GitHub PR activity loaded',date:pr.updated_at.slice(0,10),impact:'Live repository',link:pr.html_url}));
+}
 async function gateway(pathname, payload) {
   if (!GATEWAY) return null;
   const raw=JSON.stringify(payload); const headers={'content-type':'application/json'};
@@ -43,10 +53,10 @@ async function gateway(pathname, payload) {
   if(!response.ok) throw Error(`gateway ${response.status}`); return data;
 }
 async function api(req,res,url) {
-  if(req.method==='GET' && url.pathname==='/api/health') return send(res,200,{ok:true,mode:GATEWAY?'live-gateway':'demo-adapter',time:new Date().toISOString()});
+  if(req.method==='GET' && url.pathname==='/api/health') return send(res,200,{ok:true,mode:GATEWAY?'live-gateway':'demo-adapter',githubRepo:GITHUB_REPO,github:GITHUB_TOKEN?'authenticated':'public-read',time:new Date().toISOString()});
   if(req.method==='GET' && url.pathname==='/api/overview') return send(res,200,{active:3,completed:18,approval:1,verifiedRate:92,worker:'healthy',model:'configured',github:'action required',gmail:'optional'});
   if(req.method==='GET' && url.pathname==='/api/tasks') return send(res,200,{tasks,updatedAt:new Date().toISOString()});
-  if(req.method==='GET' && url.pathname==='/api/completed') return send(res,200,{items:completed});
+  if(req.method==='GET' && url.pathname==='/api/completed') { const live=await githubPulls().catch(()=>[]); const seen=new Set(live.map(x=>x.pr)); return send(res,200,{items:[...live,...completed.filter(x=>!seen.has(x.pr))]}); }
   if(req.method==='GET' && url.pathname==='/api/events') return send(res,200,{events});
   if(req.method==='GET' && url.pathname==='/api/providers') return send(res,200,{providers:[...providerStore.values()].map(({secret,...safe})=>safe)});
   if(req.method==='POST' && url.pathname==='/api/providers') {
